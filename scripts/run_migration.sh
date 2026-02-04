@@ -1,0 +1,1 @@
+psql -U dxtrr -d gobank -h localhost < ../db/migrations/schema.sql

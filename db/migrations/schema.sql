@@ -1,52 +1,49 @@
---Drop tables if they exists for development
+-- Drop tables if they exist (for development)
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS accounts CASCADE;
 
+-- Accounts table
+CREATE TABLE accounts (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    balance DECIMAL(15, 2) DEFAULT 0.00 CHECK (balance >= 0),
+    currency VARCHAR(3) DEFAULT 'USD',
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
---  Accounts Table
+-- Transactions table
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    from_account_id INT REFERENCES accounts(id),
+    to_account_id INT REFERENCES accounts(id),
+    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+    type VARCHAR(20) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'completed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CHECK (from_account_id IS NOT NULL OR to_account_id IS NOT NULL),
+    CHECK (from_account_id != to_account_id)
+);
 
-create table accounts (
-id serial primary key,
-email varchar(255) unique not null,
-password_hash varchar(255) unique not null,
-first_name varchar(100) not null,
-last_name varchar(100) not null,
-balance decimal(15,2) default 0.00,
-currency varchar(3) default 'USD',
-status varchar(20) default 'active',
-created_at timestamp default current_timestamp,
-updated_at timestamp default current_timestamp,
-constrant valid_balance check (balance is not null and balance >= 0)
-)
+-- Sessions table
+CREATE TABLE sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    account_id INT REFERENCES accounts(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
---  Transaction Table
-create table transactions (
-id serial primary key,
-from_account_id int references accounts(id),
-to_account_id int references accounts(id),
-amount decimal(15,2) not null,
-type varchar(20) not null,
-description text,
-status varchar(20) default 'completed'
-created_at timestamp default current_timestamp,
-constraint valid_amount check (amount > 0),
-constraint valid_accounts check (from_account_id is not null or to_account_id is not null),
-constraint no_same_account check (from_account_id != to_account_id),
-)
-
--- Session Table
-create table sessions (
-id varchar(255) primary key,
-account_id int references accounts(id) on delete cascade,
-expires_at timestamp not null
-created_at timestamp default current_timestamp
-)
-
---Indexes
-
-create index idx_transactions_from_account on transactions(from_account_id)
-create index idx_transactions_to_account on transactions(to_account_id)
-create index idx_transactions_created_at on transactions(created_at)
-create index idx_sessions_account_id on sessions(account_id);
-create index idx_sessions_expires_at on sessions(expires_at);
+-- Indexes
+CREATE INDEX idx_transactions_from_account ON transactions(from_account_id);
+CREATE INDEX idx_transactions_to_account ON transactions(to_account_id);
+CREATE INDEX idx_transactions_created_at ON transactions(created_at);
+CREATE INDEX idx_sessions_account_id ON sessions(account_id);
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX idx_accounts_email ON accounts(email);

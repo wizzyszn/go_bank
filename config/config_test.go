@@ -2,36 +2,37 @@ package config
 
 import (
 	// "os"
+	"os"
 	"testing"
 )
 
-// func TestLoad(t *testing.T) {
-// 	os.Setenv("DB_PASSWORD", "testpassword")
-// 	os.Setenv("SESSION_SECRET", "testsecret")
+func TestLoad(t *testing.T) {
+	os.Setenv("DB_PASSWORD", "testpassword")
+	os.Setenv("SESSION_SECRET", "testsecret")
 
-// 	cfg, err := Load()
+	cfg, err := Load()
 
-// 	if err != nil {
-// 		t.Fatalf("Expected no error, but got %v ", err)
-// 	}
+	if err != nil {
+		t.Fatalf("Expected no error, but got %v ", err)
+	}
 
-// 	if cfg.Database.Password != "testpassword" {
-// 		t.Errorf("Expected DB_PASSWORD to be 'testpassword' but got %s", cfg.Database.Password)
-// 	}
+	if cfg.Database.Password != "testpassword" {
+		t.Errorf("Expected DB_PASSWORD to be 'testpassword' but got %s", cfg.Database.Password)
+	}
 
-// 	if cfg.Security.SessionSecret != "testsecret" {
-// 		t.Errorf("Expected SESSION_SECRET to be 'testsecret' but got %s", cfg.Security.SessionSecret)
-// 	}
-// 	if cfg.Server.Port != "8080" {
-// 		t.Errorf("Expected default PORT to be '8080', got '%s'", cfg.Server.Port)
-// 	}
+	if cfg.Security.SessionSecret != "testsecret" {
+		t.Errorf("Expected SESSION_SECRET to be 'testsecret' but got %s", cfg.Security.SessionSecret)
+	}
+	if cfg.Server.Port != "8080" {
+		t.Errorf("Expected default PORT to be '8080', got '%s'", cfg.Server.Port)
+	}
 
-// 	if cfg.Database.Host != "localhost" {
-// 		t.Errorf("Expected default DB_HOST to be 'localhost', got '%s'", cfg.Database.Host)
-// 	}
-// 	os.Unsetenv("DB_PASSWORD")
-// 	os.Unsetenv("SESSION_SECRET")
-// }
+	if cfg.Database.Host != "localhost" {
+		t.Errorf("Expected default DB_HOST to be 'localhost', got '%s'", cfg.Database.Host)
+	}
+	os.Unsetenv("DB_PASSWORD")
+	os.Unsetenv("SESSION_SECRET")
+}
 
 func TestValidate(t *testing.T) {
 	tests := []struct {

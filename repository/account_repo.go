@@ -118,12 +118,12 @@ func (r *AccountRepository) UpdateBalance(tx *sql.Tx, accountID int, newBalace f
 	return nil
 }
 
-func (r *AccountRepository) GetUpdateBalance(tx *sql.Tx, accountID int) (float64, error) {
+func (r *AccountRepository) GetBalanceForUpdate(tx *sql.Tx, accountID int) (float64, error) {
 	query := `
 	SELECT balance 
 	FROM accounts
 	WHERE id = $1
-	FOR UPDATE
+	FOR NO KEY UPDATE
 	`
 	var balance float64
 

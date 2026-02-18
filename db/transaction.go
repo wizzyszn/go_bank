@@ -32,6 +32,7 @@ func (db *DB) WithTransaction(ctx context.Context, fn TxFunc) error {
 		return fmt.Errorf("error committing transaction: %w", err)
 	}
 	return nil
+	
 }
 
 func (db *DB) ExecutionInTransaction(ctx context.Context, query string, args ...any) error {

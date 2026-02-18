@@ -18,14 +18,14 @@ type Transaction struct {
 // DepositRequest represents a deposit request
 
 type DepositRequest struct {
-	Amount      string `json:"amount"`
+	Amount      float64 `json:"amount"`
 	Description string `json:"description"`
 }
 
 // WithdrawRequest represents a withdrawal request
 
 type WitdrawRequest struct {
-	Amount      string `json:"amount"`
+	Amount      float64 `json:"amount"`
 	Description string `json:"description"`
 }
 

@@ -7,7 +7,12 @@ type ApiResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
-type PaginatedParams struct {
+type PaginationParams struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+}
+
+type PaginatedResponse struct {
 	Data       any `json:"data"`
 	Page       int `json:"page"`
 	Limit      int `json:"limit"`
@@ -15,7 +20,7 @@ type PaginatedParams struct {
 	TotalPages int `json:"total_pages"`
 }
 
-type Balance struct {
+type BalanceResponse struct {
 	Balance  float64 `json:"balance"`
-	Currency float64 `json:"currency"`
+	Currency string  `json:"currency"`
 }

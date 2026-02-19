@@ -188,3 +188,87 @@ func (s *TransactionService) Transfer(fromAccountID int, req models.TransferRequ
 
 	return transaction.ToResponse(), nil
 }
+
+func (s *TransactionService) GetTransaction(accountID, transactionID int) (*models.TransactionResponse, error) {
+
+	transaction, err := s.transactionRepo.GetByID(transactionID)
+
+	if err != nil {
+		return nil, fmt.Errorf("transaction not found")
+	}
+	isParticipant := false
+	if transaction.FromAccountID != nil && *transaction.FromAccountID == accountID {
+		isParticipant = true
+	} else {
+		if transaction.ToAccountID != nil && *transaction.ToAccountID == accountID {
+			isParticipant = true
+		}
+	}
+
+	if !isParticipant {
+		return nil, fmt.Errorf("transaction not found")
+	}
+
+	return transaction.ToResponse(), nil
+
+}
+
+func (s *TransactionService) GetTransactions(accountID, page, limit int) (*models.PaginatedResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 && limit > 100 {
+		limit = 20
+	}
+
+	if err := utils.ValidatePagination(page, limit); err != nil {
+		return nil, err
+	}
+
+	account, err := s.accountRepo.GetByID(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("account not found: %w", err)
+	}
+
+	if account.Status != models.AccountStatusActice {
+		return nil, fmt.Errorf("this account is %s", account.Status)
+	}
+
+	transactions, totalCount, err := s.transactionRepo.GetByAccountID(accountID, page, limit)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions: %w", err)
+	}
+	responses := make([]*models.TransactionResponse, len(transactions))
+
+	for i, transaction := range transactions {
+		responses[i] = transaction.ToResponse()
+	}
+
+	totalPages := totalCount / limit
+	if totalCount%limit != 0 {
+		totalPages++
+	}
+	return &models.PaginatedResponse{
+		Data:       responses,
+		Page:       page,
+		Limit:      limit,
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+	}, nil
+}
+
+func (s *TransactionService) GetBalance(accountID int) (*models.BalanceResponse, error) {
+	account, err := s.accountRepo.GetByID(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("account not found")
+	}
+	if account.Status != models.AccountStatusActice {
+		return nil, fmt.Errorf("this account is: %s", account.Status)
+	}
+	return &models.BalanceResponse{
+		Currency: account.Currency,
+		Balance:  account.Balance,
+	}, nil
+}

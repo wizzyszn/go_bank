@@ -6,8 +6,8 @@ import "time"
 
 type Transaction struct {
 	ID            int       `json:"id" db:"id"`
-	FromAccountID int       `json:"from_account_id" db:"from_account_id"`
-	ToAccountID   int       `json:"to_account_id" db:"to_account_id"`
+	FromAccountID *int       `json:"from_account_id" db:"from_account_id"`
+	ToAccountID   *int       `json:"to_account_id" db:"to_account_id"`
 	Amount        float64   `json:"amount" db:"amount"`
 	Type          string    `json:"type" db:"type"`
 	Description   string    `json:"description" db:"description"`
@@ -52,8 +52,8 @@ type TransactionResponse struct {
 func (t *Transaction) ToResponse() *TransactionResponse {
 	return &TransactionResponse{
 		ID:            t.ID,
-		FromAccountID: &t.FromAccountID,
-		ToAccountID:   &t.ToAccountID,
+		FromAccountID: t.FromAccountID,
+		ToAccountID:   t.ToAccountID,
 		Amount:        t.Amount,
 		Type:          t.Type,
 		Description:   t.Description,

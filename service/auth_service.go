@@ -27,7 +27,7 @@ func NewAuthService(database *db.DB, accountRepo *repository.AccountRepository, 
 	}
 }
 
-func (s *AuthService) RegisterAccount(req *models.CreateAccountRequest) (*models.AccountResponse, error) {
+func (s *AuthService) Register(req *models.CreateAccountRequest) (*models.AccountResponse, error) {
 
 	//Validate
 	if err := utils.ValidateEmail(req.Email); err != nil {

@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/wizzyszn/go_bank/middleware"
 	"github.com/wizzyszn/go_bank/models"
@@ -9,88 +11,153 @@ import (
 	"github.com/wizzyszn/go_bank/utils"
 )
 
-type AuthHandler struct {
-	authService *service.AuthService
+type TransactionHandler struct {
+	transactionService *service.TransactionService
 }
 
-func NewAuthService(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{
-		authService: authService,
+func NewTransactionHandler(transactionService *service.TransactionService) *TransactionHandler {
+	return &TransactionHandler{
+		transactionService: transactionService,
 	}
 }
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req models.CreateAccountRequest
+func (h *TransactionHandler) Deposit(w http.ResponseWriter, r *http.Request) {
+
+	account := middleware.RequireAccount(w, r)
+	if account == nil {
+		return
+	}
+	var req models.DepositRequest
 
 	if err := utils.ParseJSON(r, &req); err != nil {
-		utils.WriteBadRequest(w, "Invalid request body:"+err.Error())
+		utils.WriteBadRequest(w, "Invalid request body: "+err.Error())
 		return
 	}
 
-	account, err := h.authService.Register(&req)
+	transaction, err := h.transactionService.Deposit(account.ID, &req)
 
 	if err != nil {
-		if validationErr, ok := err.(*utils.ValidationError); ok {
-			utils.WriteBadRequest(w, validationErr.Error())
+		if Validation, ok := err.(*utils.ValidationError); ok {
+			utils.WriteBadRequest(w, Validation.Error())
 			return
 		}
 		utils.WriteBadRequest(w, err.Error())
 		return
 	}
-	utils.WriteCreated(w, account)
+	utils.WriteCreated(w, transaction)
 
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req models.LoginAccountRequest
+func (h *TransactionHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
+	var req models.WitdrawRequest
+
+	account := middleware.RequireAccount(w, r)
+	if account == nil {
+		return
+	}
 
 	if err := utils.ParseJSON(r, &req); err != nil {
-		utils.WriteBadRequest(w, "Invalid request body:"+err.Error())
-
+		utils.WriteBadRequest(w, "Invalid request body"+err.Error())
 		return
 	}
 
-	res, err := h.authService.Login(req)
+	transaction, err := h.transactionService.WithDraw(account.ID, &req)
 	if err != nil {
-		utils.WriteUnAuthorized(w, err.Error())
+		if ValidationErr, ok := err.(*utils.ValidationError); ok {
+			utils.WriteBadRequest(w, ValidationErr.Error())
+			return
+		}
+		utils.WriteBadRequest(w, err.Error())
 		return
 	}
-	utils.WriteSuccess(w, res)
+
+	utils.WriteCreated(w, transaction)
 }
 
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *TransactionHandler) Transfer(w http.ResponseWriter, r *http.Request) {
+	var req models.TransferRequest
+
 	account := middleware.RequireAccount(w, r)
 
 	if account == nil {
 		return
 	}
 
-	authHeader := r.Header.Get("Authorization")
-	sessionID := ""
-
-	if len(authHeader) > 7 {
-		sessionID = authHeader[7:]
-	}
-
-	if sessionID == "" {
-		utils.WriteBadRequest(w, "Missing Session ID")
+	if err := utils.ParseJSON(r, &req); err != nil {
+		utils.WriteBadRequest(w, "Invalid request body: "+err.Error())
 		return
 	}
 
-	if err := h.authService.Logout(sessionID); err != nil {
+	transaction, err := h.transactionService.Transfer(account.ID, &req)
+	if err != nil {
+		if ValidationErr, ok := err.(*utils.ValidationError); ok {
+			utils.WriteBadRequest(w, ValidationErr.Error())
+			return
+		}
+		utils.WriteBadRequest(w, err.Error())
+		return
+	}
+
+	utils.WriteCreated(w, transaction)
+}
+
+func (h *TransactionHandler) GetTransations(w http.ResponseWriter, r *http.Request) {
+	account := middleware.RequireAccount(w, r)
+	if account == nil {
+		return
+	}
+
+	page := 1
+	limit := 20
+
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err != nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err != nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	transactions, err := h.transactionService.GetTransactions(account.ID, page, limit)
+
+	if err != nil {
 		utils.WriteInternalError(w, "")
 		return
 	}
-	utils.WriteSuccess(w, map[string]string{
-		"message": "Logged out successfully",
-	})
+	utils.WriteSuccess(w, transactions)
 }
-func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 
+func (h *TransactionHandler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	account := middleware.RequireAccount(w, r)
 	if account == nil {
 		return
 	}
 
-	utils.WriteSuccess(w, account.ToResponse())
+	path := r.URL.Path
+
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+
+	if len(parts) < 3 {
+		utils.WriteBadRequest(w, "Invalid transaction ID")
+		return
+	}
+
+	transactionID, err := strconv.Atoi(parts[2])
+	if err != nil {
+		utils.WriteBadRequest(w, "Invalid transaction ID")
+		return
+	}
+
+	transaction, err := h.transactionService.GetTransaction(account.ID, transactionID)
+
+	if err != nil {
+		utils.WriteNotFound(w, "Transaction not found")
+		return
+	}
+
+	utils.WriteSuccess(w, transaction)
 }

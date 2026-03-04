@@ -109,7 +109,7 @@ func (s *TransactionService) WithDraw(accountID int, req *models.WitdrawRequest)
 	return transaction.ToResponse(), nil
 }
 
-func (s *TransactionService) Transfer(fromAccountID int, req models.TransferRequest) (*models.TransactionResponse, error) {
+func (s *TransactionService) Transfer(fromAccountID int, req *models.TransferRequest) (*models.TransactionResponse, error) {
 	if err := utils.ValidateAmount(req.Amount); err != nil {
 		return nil, err
 	}
